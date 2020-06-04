@@ -20,15 +20,18 @@ namespace MySQL_ex
         {
             InitializeComponent();
         }
-        //打开
+        /*Button1-打开程序与数据库连接*/
         private void Button1_Click(object sender, EventArgs e)
         {
+            //接收文本框输入
             databaseServer = textBox1.Text;
             databasePort = textBox5.Text;
             databaseUid = textBox2.Text;
             databasePassword = textBox3.Text;
             databaseName = textBox4.Text;
+            //初始化连接信息，组成连接信息字符串
             Initialize(databaseServer, databasePort, databaseUid, databasePassword, databaseName);
+            //打开连接
             if (OpenConnection())
             {
                 MessageBox.Show("Connection succeeded!");
@@ -38,33 +41,44 @@ namespace MySQL_ex
                 MessageBox.Show("Cannot connect, please check your password/database.");
             }
         }
-        //查所有
+        /*Button2-查询表中所有数据*/
         private void Button2_Click(object sender, EventArgs e)
         {
+            //接收文本框输入
             tableName = textBox6.Text;
+            //组成select语句字符串
             string sqlDML = "select * from " + tableName;
+            //执行语句，查询数据
             DataSet dataSet = GetDataSet(sqlDML, tableName);
+            //设置表名、数据来源
             dataGridView1.DataSource = dataSet;
             dataGridView1.DataMember = tableName;
+            //单元格列宽自适应
             for (int i = 0; i < dataGridView1.ColumnCount; ++i)
             {
                 dataGridView1.Columns[i].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
             }
         }
-        //增
+        /*Button4-插入数据*/
         private void Button4_Click(object sender, EventArgs e)
         {
-            List<string> dataString = new List<string>();
-            dataString.Add(textBox7.Text);
-            dataString.Add(textBox8.Text);
-            dataString.Add(textBox9.Text);
-            dataString.Add(textBox10.Text);
-            dataString.Add(textBox11.Text);
-            dataString.Add(textBox12.Text);
-            dataString.Add(textBox13.Text);
+            //接收文本框输入，保存在List中
+            List<string> dataString = new List<string>
+            {
+                textBox7.Text,
+                textBox8.Text,
+                textBox9.Text,
+                textBox10.Text,
+                textBox11.Text,
+                textBox12.Text,
+                textBox13.Text
+            };
+            //组成show语句字符串
             string sqlDML = "show columns from " + tableName;
+            //读取列名
             MySqlCommand mySqlCommand = CreateCommand(sqlDML);
             MySqlDataReader mySqlDataReader = mySqlCommand.ExecuteReader();
+            //读取到的列名组成字符串，并统计列数
             mySqlDataReader.Read();
             string tableNameSring = mySqlDataReader.GetString(0);
             int tableNameCount = 1;
@@ -73,8 +87,12 @@ namespace MySQL_ex
                 tableNameSring += "," + mySqlDataReader.GetString(0);
                 ++tableNameCount;
             }
+            //关闭DataReader连接
             mySqlDataReader.Close();
+            //根据列数组成insert语句字符串
+            //文本框输入的多余的值忽略处理
             sqlDML = "insert into " + tableName + "(" + tableNameSring + ") values(" + dataString[0];
+            //判断插入的值是否为纯数字，不是需要加''
             for(int i = 1; i < tableNameCount; ++i)
             {
                 if (IsInteger(dataString[i]))
@@ -87,14 +105,18 @@ namespace MySQL_ex
                 }
             }
             sqlDML += ")";
+            //执行语句，插入数据
             AlterRow(sqlDML);
         }
-        //删
+        /*Button5-删除数据*/
         private void Button5_Click(object sender, EventArgs e)
         {
+            //接收文本框输入
             string rowName = textBox14.Text;
             string deleteKey = textBox15.Text;
+            //组成delete语句字符串
             string sqlDML;
+            //判断删除的值是否为纯数字，不是需要加''
             if (IsInteger(deleteKey))
             {
                 sqlDML = "delete from " + tableName + " where " + rowName + " = " + deleteKey;
@@ -103,15 +125,19 @@ namespace MySQL_ex
             {
                 sqlDML = "delete from " + tableName + " where " + rowName + " = '" + deleteKey + "'";
             }
+            //执行语句，删除数据
             AlterRow(sqlDML);
         }
-        //改
+        /*Button6-更改数据*/
         private void Button6_Click(object sender, EventArgs e)
         {
+            //接收文本框输入
             string rowName = textBox16.Text;
             string oldData = textBox17.Text;
             string newData = textBox18.Text;
+            //组成update语句字符串
             string sqlDML;
+            //判断要更改的值和新值是否为纯数字，不是需要加''
             if (IsInteger(oldData))
             {
                 sqlDML = "update " + tableName + " set " + rowName + " = " + newData + " where " + rowName + " = " + oldData;
@@ -120,23 +146,29 @@ namespace MySQL_ex
             {
                 sqlDML = "update " + tableName + " set " + rowName + " = '" + newData + "' where " + rowName + " = '" + oldData + "'";
             }
+            //执行语句，更改数据
             AlterRow(sqlDML);
         }
-        //查
+        /*Button7-查询数据*/
         private void Button7_Click(object sender, EventArgs e)
         {
+            //接收文本框输入
             string rowName = textBox19.Text;
             string condition = textBox20.Text;
+            //组成select语句字符串
             string sqlDML = "select " + rowName + " from " + tableName + " where " + condition;
+            //执行语句，查询数据
             DataSet dataSet = GetDataSet(sqlDML, tableName);
+            //设置表名、数据来源
             dataGridView2.DataSource = dataSet;
             dataGridView2.DataMember = tableName;
+            //单元格列宽自适应
             for (int i = 0; i < dataGridView2.ColumnCount; ++i)
             {
                 dataGridView2.Columns[i].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
             }
         }
-        //关闭
+        /*Button3-关闭程序与数据库连接*/
         private void Button3_Click(object sender, EventArgs e)
         {
             CloseConnection();
@@ -166,13 +198,13 @@ namespace MySQL_ex
                 return false;
             }
         }
-        //创建command
+        //实例化MySqlCommang类
         public MySqlCommand CreateCommand(string sql)
         {
             MySqlCommand mySqlCmmmand = new MySqlCommand(sql, mySqlConnection);
             return mySqlCmmmand;
         }
-        //创建adapter
+        //实例化MySqlDataAdapter类
         public MySqlDataAdapter CreateAdapter(MySqlCommand mySqlCmmmand)
         {
             MySqlDataAdapter mySqlDataAdapter = new MySqlDataAdapter(mySqlCmmmand);
